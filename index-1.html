@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BS Mathematics Books Library</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#14213d;--mute:#5b6478;--acc:#2f5bea;--line:#e1e5ef;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#192034;--ink:#eef1f8;--mute:#9aa4bd;--acc:#7b9bff;--line:#2a3350}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:28px 18px 18px;max-width:1100px;margin:auto}
+h1{margin:0 0 6px;font-size:1.7rem}
+p.sub{margin:0;color:var(--mute)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+input,select{padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:1rem}
+input{flex:1;min-width:180px}
+main{max-width:1100px;margin:auto;padding:0 18px 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.card .ic{font-size:2rem}
+.card h3{margin:0;font-size:1.02rem}
+.card small{color:var(--mute)}
+.btns{display:flex;gap:8px;margin-top:auto;padding-top:6px}
+button,a.btn{border:0;border-radius:9px;padding:9px 12px;font-size:.9rem;cursor:pointer;text-decoration:none;background:var(--acc);color:#fff}
+a.btn.alt{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.folder{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.folder iframe{width:100%;height:70vh;border:0}
+.note{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:14px;margin:14px 0;color:var(--mute);font-size:.92rem}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;flex-direction:column;z-index:9;padding-top:env(safe-area-inset-top,0px)}
+#modal.on{display:flex}
+#mhead{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--card)}
+#mhead b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#modal iframe{flex:1;width:100%;border:0;background:#fff}
+footer{text-align:center;color:var(--mute);padding:20px;font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 BS Mathematics Books</h1>
+  <p class="sub">Browse and preview all course books online.</p>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search books…">
+    <select id="sem"><option value="">All semesters</option></select>
+  </div>
+</header>
+<main>
+  <div id="grid" class="grid"></div>
+  <div id="empty" class="note" style="display:none">No books match your search.</div>
+  <h2 style="margin:28px 0 10px;font-size:1.2rem">📁 Full Drive folder</h2>
+  <div class="folder"><iframe id="fold" title="Drive folder"></iframe></div>
+  <div class="note">If the folder doesn't show above, <a id="open" target="_blank" rel="noopener">open it in Google Drive</a>. The Drive folder must be shared as “Anyone with the link – Viewer”.</div>
+</main>
+<footer>Indus Academy &amp; Testing Services</footer>
+
+<div id="modal">
+  <div id="mhead"><b id="mt"></b><a id="mdl" class="btn alt" target="_blank" rel="noopener">Open</a><button id="mc">✕ Close</button></div>
+  <iframe id="mf" title="PDF preview" allow="autoplay"></iframe>
+</div>
+
+<script>
+const FOLDER_ID = "1JGnofiVrVCNAz-14KfM0tIh1OADP7N3S";
+
+/* ADD BOOKS HERE: paste the file ID from the Drive share link
+   https://drive.google.com/file/d/FILE_ID/view  */
+const BOOKS = [
+  // { title: "Calculus", author: "Thomas", sem: "Semester 1", id: "FILE_ID_HERE" },
+];
+
+const $ = s => document.querySelector(s);
+$("#fold").src = "https://drive.google.com/embeddedfolderview?id=" + FOLDER_ID + "#grid";
+$("#open").href = "https://drive.google.com/drive/folders/" + FOLDER_ID;
+
+const sems = [...new Set(BOOKS.map(b => b.sem).filter(Boolean))];
+sems.forEach(s => { const o = document.createElement("option"); o.value = o.textContent = s; $("#sem").appendChild(o); });
+if (!BOOKS.length) { $("#q").parentElement.style.display = "none"; }
+
+function render() {
+  const q = $("#q").value.toLowerCase(), s = $("#sem").value;
+  const list = BOOKS.filter(b => (!s || b.sem === s) && (b.title + " " + (b.author || "")).toLowerCase().includes(q));
+  $("#grid").innerHTML = "";
+  list.forEach(b => {
+    const d = document.createElement("div"); d.className = "card";
+    d.innerHTML = '<div class="ic">📘</div><h3></h3><small></small><div class="btns"><button>Preview</button><a class="btn alt" target="_blank" rel="noopener">Download</a></div>';
+    d.querySelector("h3").textContent = b.title;
+    d.querySelector("small").textContent = [b.author, b.sem].filter(Boolean).join(" · ");
+    d.querySelector("button").onclick = () => openBook(b);
+    d.querySelector("a").href = "https://drive.google.com/uc?export=download&id=" + b.id;
+    $("#grid").appendChild(d);
+  });
+  $("#empty").style.display = BOOKS.length && !list.length ? "block" : "none";
+}
+function openBook(b) {
+  $("#mt").textContent = b.title;
+  $("#mf").src = "https://drive.google.com/file/d/" + b.id + "/preview";
+  $("#mdl").href = "https://drive.google.com/file/d/" + b.id + "/view";
+  $("#modal").classList.add("on");
+}
+$("#mc").onclick = () => { $("#modal").classList.remove("on"); $("#mf").src = "about:blank"; };
+$("#q").oninput = render; $("#sem").onchange = render;
+render();
+</script>
+</body>
+</html>
